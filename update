@@ -1,0 +1,56 @@
+#!/usr/bin/env bash 
+
+ORIGIN=`pwd`
+SRCDIR="$HOME/src"
+GIT_UPDATE="git pull"
+SYSTEM_UPDATE="sudo xbps-install -Suv"
+
+#build source files
+build_source() {
+    echo "Configuring"
+    if [ -e configure ]; then
+       ./configure --prefix=/usr
+    fi
+    echo "Building"
+    if [ -e Makefile ]; then
+        make > /dev/null
+    fi
+    if [ -e install.sh ]; then
+        install.sh
+    fi
+
+}
+
+#install the source build
+install_build() {
+    if [ -e Makefile ]; then
+        sudo make install > /dev/null
+    fi
+}
+
+#update src compiled packages in SRCDIR
+update_sources(){
+    #make sure our source directory exists
+    if [ -d $SRCDIR ]; then
+        for repo in $SRCDIR/* #loop through all the directories
+        do
+            cd $repo
+            if [ -d ".git" ]; then #check if its a git repo and pull if it is
+                printf "Updating %s : " "$(basename $repo)"
+                if [[ $(git pull) =~ "Already up-to-date" ]]; then
+                    echo "$(basename $repo) done."
+                else
+                    build_soure
+                fi
+                install_build
+            fi
+        done
+    fi
+}
+
+#do system updates
+update_system() {
+    $SYSTEM_UPDATE
+}
+update_system
+update_sources
